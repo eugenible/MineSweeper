@@ -1,94 +1,47 @@
 package org.eugenible.model.game;
 
 
+import lombok.Getter;
+import lombok.Setter;
 import org.eugenible.model.game.states.CellState;
-import org.eugenible.model.game.states.DiscoveredSafeState;
-import org.eugenible.model.game.states.FlaggedState;
-import org.eugenible.model.game.states.UnknownState;
 
+@Getter
+@Setter
 public class Cell {
     private final Coordinate coordinate;
     private int bombsNearCount;
     private boolean isBomb;
-    private final Field field;
     private CellState state;
     private CellIcon icon;
 
-    Cell(Field field, Coordinate coordinate, boolean isBomb) {
+    Cell(Coordinate coordinate, boolean isBomb) {
         this.coordinate = coordinate;
-        this.field = field;
         this.icon = CellIcon.UNKNOWN;
-        this.state = new UnknownState(this);
+        this.state = CellState.COVERED_STATE;
         this.isBomb = isBomb;
     }
 
-    public boolean tryRevealSafeWithoutClick() {
+    public boolean tryRevealSafeWithoutClick(Field field) {
         if (!isBomb) {
-            if (state instanceof FlaggedState) field.incrementAssumedMinesRemainder();
+            if (state == CellState.FLAGGED_STATE) {
+                field.incrementAssumedMinesRemainder();
+            }
             icon = CellIcon.getIconForNearBombCount(bombsNearCount);
-            state = new DiscoveredSafeState(this);
+            state = CellState.REVEALED_STATE;
             return true;
         }
         return false;
     }
 
-    public void leftMouseClick() {
-        state.leftMouseClick();
+    public void leftMouseClick(Field field) {
+        state.leftMouseClick(this, field);
     }
 
-    public void middleMouseClick() {
-        state.middleMouseClick();
+    public void middleMouseClick(Field field) {
+        state.middleMouseClick(this, field);
     }
 
-    public int countFlagsAround() {
-        return field.countFlagsAround(coordinate.getX(), coordinate.getY());
-    }
-
-    public void leftClickAllSurrounding() {
-        this.field.leftClickAllSurrounding(coordinate.getX(), coordinate.getY());
-    }
-
-    public void rightMouseClick() {
-        this.state.rightMouseClick();
-    }
-
-    public Field getField() {
-        return field;
-    }
-
-    public CellState getState() {
-        return state;
-    }
-
-    public void setState(CellState state) {
-        this.state = state;
-    }
-
-    public boolean isBomb() {
-        return isBomb;
-    }
-
-    public void setBomb(boolean bomb) {
-        isBomb = bomb;
-    }
-
-    public int getBombsNearCount() {
-        return bombsNearCount;
-    }
-
-    public void setBombsNearCount(int bombsNearCount) {
-        this.bombsNearCount = bombsNearCount;
-    }
-
-    public CellIcon getIcon() {
-        return icon;
-    }
-
-    public void setIcon(CellIcon icon) {
-        this.icon = icon;
-    }
-
-    public Coordinate getCoordinate() {
-        return coordinate;
+    public void rightMouseClick(Field field) {
+        state.rightMouseClick(this, field);
     }
 }

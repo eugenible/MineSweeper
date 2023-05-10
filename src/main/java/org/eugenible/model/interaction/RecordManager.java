@@ -1,6 +1,9 @@
 package org.eugenible.model.interaction;
 
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import org.eugenible.model.game.Complexity;
+import org.eugenible.model.interaction.exceptions.InvalidInputException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -9,22 +12,27 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
+@Log4j2
 public class RecordManager {
-    private static final PlayerData defaultPlayerData = new PlayerData("Unknown", 999);
-    private Path recordsFile;
-    private Map<Complexity, PlayerData> recordsMap;
+    private static final PlayerData DEFAULT_PLAYER_DATA = new PlayerData("Unknown", 999);
+    private final Path recordsFile;
+
+    @Getter
+    private final Map<Complexity, PlayerData> recordsMap;
 
     public RecordManager(String recordsFilename) {
-        recordsMap = new HashMap<>();
+        recordsMap = new EnumMap<>(Complexity.class);
         recordsFile = Path.of(recordsFilename);
         if (!Files.exists(recordsFile)) {
             try {
                 Files.createFile(recordsFile);
             } catch (IOException e) {
-                System.out.println("Couldn't create records file!");
+                log.warn("Couldn't create records file!", e);
             }
         }
         setRecordMapToDefault();
@@ -32,28 +40,9 @@ public class RecordManager {
     }
 
     private void setRecordMapToDefault() {
-        recordsMap.put(Complexity.EASY, defaultPlayerData);
-        recordsMap.put(Complexity.MEDIUM, defaultPlayerData);
-        recordsMap.put(Complexity.HARD, defaultPlayerData);
-    }
-
-    private void readRecordsFromFile() {
-        try (BufferedReader reader = Files.newBufferedReader(recordsFile)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] values = line.split(",");
-                recordsMap.put(Complexity.valueOf(values[0]), new PlayerData(values[1], Integer.parseInt(values[2])));
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("File " + recordsFile.getFileName() + " not found!");
-        } catch (IOException e) {
-            System.out.println("IOException occurred");
-        } catch (ArrayIndexOutOfBoundsException | IllegalArgumentException e) {
-            System.out.println(
-                    "Формат хранения рекордов в строке должен иметь вид <COMPLEXITY,NAME,DURATION>, где:\nCOMPLEXITY " +
-                            "- [EASY,MEDIUM,HARD];\nNAME - имя;\nDURATION - рекорд в секундах.");
-            setRecordMapToDefault();
-        }
+        recordsMap.put(Complexity.EASY, DEFAULT_PLAYER_DATA);
+        recordsMap.put(Complexity.MEDIUM, DEFAULT_PLAYER_DATA);
+        recordsMap.put(Complexity.HARD, DEFAULT_PLAYER_DATA);
     }
 
     // Most important method #1
@@ -65,8 +54,64 @@ public class RecordManager {
     // Most important method #2
     public PlayerData getRecordPlayerData(Complexity complexity) {
         PlayerData data = recordsMap.get(complexity);
-        if (data != null) return data;
-        return defaultPlayerData;
+        if (data != null) {
+            return data;
+        }
+        return DEFAULT_PLAYER_DATA;
+    }
+
+    private void readRecordsFromFile() {
+        try (BufferedReader reader = Files.newBufferedReader(recordsFile)) {
+            List<String> recordLines = new ArrayList<>();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                recordLines.add(line);
+            }
+
+            fillRecords(recordLines);
+        } catch (FileNotFoundException e) {
+            log.warn("File '{}' not found!", recordsFile.getFileName(), e);
+        } catch (IOException | InvalidInputException e) {
+            log.warn(e);
+        }
+    }
+
+    private void fillRecords(List<String> recordLines) throws InvalidInputException {
+        for (String line : recordLines) {
+            String[] recordData = line.split(",");
+            if (recordData.length != 3) {
+                throw new InvalidInputException(
+                        "Формат хранения рекордов в строке должен иметь вид <COMPLEXITY,NAME,DURATION>, " +
+                                "где:\nCOMPLEXITY " +
+                                "- [EASY,MEDIUM,HARD];\nNAME - имя;\nDURATION - рекорд в секундах.");
+            }
+
+            Complexity complexity = getComplexity(recordData[0]);
+            String playerName = recordData[1];
+            int recordTime = getNumericRecordTime(recordData[2]);
+            recordsMap.put(complexity, new PlayerData(playerName, recordTime));
+        }
+    }
+
+    private Complexity getComplexity(String stringComplexity) throws InvalidInputException {
+        Complexity complexity;
+        try {
+            complexity = Complexity.valueOf(stringComplexity);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidInputException("Provided record complexity <" + stringComplexity + "> is not valid");
+        }
+        return complexity;
+    }
+
+    private int getNumericRecordTime(String stringRecordTime) throws InvalidInputException {
+        int record;
+        try {
+            record = Integer.parseInt(stringRecordTime);
+        } catch (NumberFormatException e) {
+            throw new InvalidInputException("Provided game duration value is not valid: <" + stringRecordTime + ">");
+        }
+        return record;
     }
 
     private void writeRecordsToFile() {
@@ -77,12 +122,8 @@ public class RecordManager {
                         entry.getValue().getDuration()));
                 writer.newLine();
             }
-        } catch (IOException ex) {
-            System.out.println("IOException occurred");
+        } catch (IOException e) {
+            log.warn("IOException occurred", e);
         }
-    }
-
-    public Map<Complexity, PlayerData> getRecordsMap() {
-        return recordsMap;
     }
 }

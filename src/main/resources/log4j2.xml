@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%highlight{%d [%t] %-5level: %msg%n}" charset="UTF-8"/>
+        </Console>
+        <File name="task3FileAppender" fileName="log/task3.log">
+            <PatternLayout pattern="%highlight{%d [%t] %-5level: %msg%n}" charset="UTF-8"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Logger name="org.eugenible.model.interaction.GameManager" level="warn" additivity="false">
+            <AppenderRef ref="task3FileAppender"/>
+        </Logger>
+        <Root level="warn">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="task3FileAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>

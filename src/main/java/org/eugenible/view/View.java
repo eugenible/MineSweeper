@@ -1,5 +1,6 @@
 package org.eugenible.view;
 
+import lombok.Setter;
 import org.eugenible.model.game.CellIcon;
 import org.eugenible.model.game.Complexity;
 import org.eugenible.model.interaction.GameData;
@@ -17,10 +18,10 @@ import java.util.Map;
 
 public class View implements ModelUpdateListener, TimerListener, RecordsUpdateListener {
 
-    private final CellEventListener cellEventListener;
-    private final GameTypeListener gameTypeListener;
-    private final RecordNameListener recordNameListener;
-    private final NewGameListener newGameListener;
+    private CellEventListener cellEventListener;
+    private GameTypeListener gameTypeListener;
+    private RecordNameListener recordNameListener;
+    private NewGameListener newGameListener;
 
     private MainWindow mainWindow;
     private LoseWindow loseWindow;

@@ -1,5 +1,6 @@
 package org.eugenible.model.interaction;
 
+import lombok.Getter;
 import org.eugenible.model.modelListeners.TimerListener;
 
 import java.util.ArrayList;
@@ -12,6 +13,8 @@ public class GameSessionTimer {
 
     private final Timer timer;
     private final TimerTask tickEverySecond;
+
+    @Getter
     private int currentGameDuration;
 
     public GameSessionTimer(List<TimerListener> timerListeners) {
@@ -43,9 +46,5 @@ public class GameSessionTimer {
 
     public void stopTimer() {
         timer.cancel();
-    }
-
-    public int getCurrentGameDuration() {
-        return currentGameDuration;
     }
 }

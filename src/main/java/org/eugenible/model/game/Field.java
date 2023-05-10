@@ -1,21 +1,23 @@
 package org.eugenible.model.game;
 
 
-import org.eugenible.model.game.states.DiscoveredSafeState;
+import lombok.Getter;
+import org.eugenible.model.game.states.CellState;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 public class Field {
-    private final Cell[][] cells;
+    private @Getter
+    final Cell[][] cells;
     private final int rows;
     private final int cols;
     private final int mineNumber;
-    List<Coordinate> mineCoordinates;
-    private int safeCellRemainder;
-    private int assumedMinesRemainder;
-    private boolean bombExploded;
+    private final List<Coordinate> mineCoordinates;
+    private @Getter int safeCellRemainder;
+    private @Getter int assumedMinesRemainder;
+    private @Getter boolean bombExploded;
 
     public Field(int rows, int cols, int mineNumber) {
         this.mineCoordinates = new ArrayList<>(mineNumber);
@@ -37,57 +39,79 @@ public class Field {
             int y = random.nextInt(cols);
             Coordinate coordinate = new Coordinate(x, y);
 
-            if (x == xClick && y == yClick || mineCoordinates.contains(coordinate)) continue;
+            if (x == xClick && y == yClick || mineCoordinates.contains(coordinate)) {
+                continue;
+            }
 
             mineCoordinates.add(coordinate);
             i++;
         }
     }
 
-    public int countFlagsAround(int x, int y) {
+    public int countFlagsAround(Coordinate coordinate) {
+        int x = coordinate.getX();
+        int y = coordinate.getY();
         int flagCount = 0;
         for (int row = x - 1; row <= x + 1; row++) {
-            if (row < 0 || row >= rows) continue;
+            if (row < 0 || row >= rows) {
+                continue;
+            }
+
             for (int col = y - 1; col <= y + 1; col++) {
-                if (col < 0 || col >= cols || (x == row && y == col)) continue;
-                if (cells[row][col].getIcon() == CellIcon.FLAGGED) flagCount++;
+                if (col < 0 || col >= cols || (x == row && y == col)) {
+                    continue;
+                }
+                if (cells[row][col].getState() == CellState.FLAGGED_STATE) {
+                    flagCount++;
+                }
             }
         }
 
         return flagCount;
     }
 
-    public void leftClickAllSurrounding(int x, int y) {
+    public void leftClickAllSurrounding(Coordinate coordinate) {
+        int x = coordinate.getX();
+        int y = coordinate.getY();
+
         for (int row = x - 1; row <= x + 1; row++) {
             if (row < 0 || row >= rows) continue;
             for (int col = y - 1; col <= y + 1; col++) {
-                if (col < 0 || col >= cols || (x == row && y == col)) continue;
-
+                if (col < 0 || col >= cols || (x == row && y == col)) {
+                    continue;
+                }
                 if (cells[row][col].getIcon().equals(CellIcon.UNKNOWN)) {
                     leftMouseClick(row, col);
                 }
-                if (bombExploded) return;
+                if (bombExploded) {
+                    return;
+                }
             }
         }
     }
 
+
     // 8-directional flood filling algorithm
     public void floodFill(int x, int y) {
         if (areCoordinatesOutOfField(x, y) || wasCellVisited(x, y)) return;
-        if (cells[x][y].tryRevealSafeWithoutClick()) decrementSafeCellsRemainder();
+        if (cells[x][y].tryRevealSafeWithoutClick(this)) decrementSafeCellsRemainder();
         if (cells[x][y].getBombsNearCount() != 0) return;
 
         for (int row = x - 1; row <= x + 1; row++) {
-            if (row < 0 || row >= rows) continue;
+            if (row < 0 || row >= rows) {
+                continue;
+            }
             for (int col = y - 1; col <= y + 1; col++) {
-                if (col < 0 || col >= cols || (row == x && col == y)) continue;
+                if (col < 0 || col >= cols || (row == x && col == y)) {
+                    continue;
+                }
                 floodFill(row, col);
             }
         }
     }
 
     private boolean wasCellVisited(int x, int y) {
-        return cells[x][y].getState() instanceof DiscoveredSafeState;
+        return cells[x][y].getState().equals(CellState.REVEALED_STATE);
     }
 
     private boolean areCoordinatesOutOfField(int x, int y) {
@@ -101,18 +125,15 @@ public class Field {
     }
 
     void leftMouseClick(int x, int y) {
-        this.cells[x][y].leftMouseClick();
+        this.cells[x][y].leftMouseClick(this);
     }
 
     void middleMouseClick(int x, int y) {
-        cells[x][y].middleMouseClick();
-        if (cells[x][y].getIcon().equals(CellIcon.ZERO)) {
-            floodFill(x, y);
-        }
+        cells[x][y].middleMouseClick(this);
     }
 
     void rightMouseClick(int x, int y) {
-        this.cells[x][y].rightMouseClick();
+        this.cells[x][y].rightMouseClick(this);
     }
 
     public void placeMines() {
@@ -128,19 +149,22 @@ public class Field {
     public void setCellsToDefault() {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                cells[r][c] = new Cell(this, new Coordinate(r, c), false);
+                cells[r][c] = new Cell(new Coordinate(r, c), false);
             }
         }
     }
-
 
     private int calculateBombsNearCoordinate(int x, int y) {
         int bombCount = 0;
         for (int row = x - 1; row <= x + 1; row++) {
             if (row < 0 || row >= rows) continue;
             for (int col = y - 1; col <= y + 1; col++) {
-                if (col < 0 || col >= cols || (x == row && y == col)) continue;
-                if (cells[row][col].isBomb()) bombCount++;
+                if (col < 0 || col >= cols || (x == row && y == col)) {
+                    continue;
+                }
+                if (cells[row][col].isBomb()) {
+                    bombCount++;
+                }
             }
         }
         return bombCount;
@@ -150,26 +174,17 @@ public class Field {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 Cell cell = cells[r][c];
-                if (cell.isBomb()) continue;
+                if (cell.isBomb()) {
+                    continue;
+                }
                 cell.setBombsNearCount(calculateBombsNearCoordinate(r, c));
             }
         }
     }
 
-    public int getSafeCellRemainder() {
-        return safeCellRemainder;
-    }
-
-    public boolean isBombExploded() {
-        return bombExploded;
-    }
 
     public void setBombExploded(boolean bombExploded) {
         this.bombExploded = bombExploded;
-    }
-
-    public int getAssumedMinesRemainder() {
-        return assumedMinesRemainder;
     }
 
     public void setAssumedMinesRemainder(int assumedMinesRemainder) {
@@ -188,7 +203,4 @@ public class Field {
         assumedMinesRemainder--;
     }
 
-    public Cell[][] getCells() {
-        return cells;
-    }
 }

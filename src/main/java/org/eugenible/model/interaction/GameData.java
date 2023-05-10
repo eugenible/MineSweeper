@@ -1,12 +1,14 @@
 package org.eugenible.model.interaction;
 
 
+import lombok.Getter;
 import org.eugenible.model.game.Cell;
 import org.eugenible.model.game.CellIcon;
 import org.eugenible.model.game.Complexity;
 import org.eugenible.model.game.GameSession;
 
 // Для передачи в View
+@Getter
 public class GameData {
 
     private CellIcon[][] icons;
@@ -38,25 +40,5 @@ public class GameData {
         }
 
         return icons;
-    }
-
-    public CellIcon[][] getIcons() {
-        return icons;
-    }
-
-    public Complexity getComplexity() {
-        return complexity;
-    }
-
-    public int getAssumedMineRemainder() {
-        return assumedMineRemainder;
-    }
-
-    public GameStatus getGameStatus() {
-        return gameStatus;
-    }
-
-    public boolean isRecord() {
-        return isRecord;
     }
 }

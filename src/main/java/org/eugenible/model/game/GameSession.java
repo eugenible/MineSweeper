@@ -1,16 +1,19 @@
 package org.eugenible.model.game;
 
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import org.eugenible.model.interaction.GameSessionTimer;
 import org.eugenible.model.interaction.GameStatus;
 import org.eugenible.model.modelListeners.TimerListener;
 
 import java.util.List;
 
+@Getter
 // Объект, связанный с конкретной игровой попыткой
 public class GameSession {
     private final Complexity complexity;
-    private final GameSessionTimer timer;
+    private final @Getter(AccessLevel.NONE) GameSessionTimer timer;
     private final Field field;
     private final int recordDuration;
     private GameStatus gameStatus;
@@ -24,7 +27,9 @@ public class GameSession {
     }
 
     public void leftMouseClicked(int x, int y) {
-        if (gameStatus.equals(GameStatus.LOST) || gameStatus.equals(GameStatus.WON)) return;
+        if (gameStatus.equals(GameStatus.LOST) || gameStatus.equals(GameStatus.WON)) {
+            return;
+        }
 
         if (gameStatus.equals(GameStatus.NEW)) {
             gameStatus = GameStatus.RUNNING;
@@ -53,13 +58,17 @@ public class GameSession {
     }
 
     public void middleMouseClicked(int x, int y) {
-        if (gameStatus.equals(GameStatus.RUNNING)) field.middleMouseClick(x, y);
+        if (gameStatus.equals(GameStatus.RUNNING)) {
+            field.middleMouseClick(x, y);
+        }
         winGameIfSafeCellsAreOpened();
         endGameIfExploded();
     }
 
     public void rightMouseClicked(int x, int y) {
-        if (gameStatus.equals(GameStatus.RUNNING) || gameStatus.equals(GameStatus.NEW)) field.rightMouseClick(x, y);
+        if (gameStatus.equals(GameStatus.RUNNING) || gameStatus.equals(GameStatus.NEW)) {
+            field.rightMouseClick(x, y);
+        }
     }
 
     private void endGameIfExploded() {
@@ -68,22 +77,6 @@ public class GameSession {
             field.markAllMinesWithIcon(CellIcon.BOMB_SHOW);
             timer.stopTimer();
         }
-    }
-
-    public GameStatus getGameStatus() {
-        return gameStatus;
-    }
-
-    public Field getField() {
-        return field;
-    }
-
-    public Complexity getComplexity() {
-        return complexity;
-    }
-
-    public int getRecordDuration() {
-        return recordDuration;
     }
 
     public int getCurrentSessionDuration() {

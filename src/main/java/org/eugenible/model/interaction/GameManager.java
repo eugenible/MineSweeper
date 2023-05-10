@@ -5,21 +5,22 @@ import org.eugenible.model.game.GameSession;
 import org.eugenible.model.modelListeners.ModelUpdateListener;
 import org.eugenible.model.modelListeners.RecordsUpdateListener;
 import org.eugenible.model.modelListeners.TimerListener;
+import org.eugenible.view.elements.ButtonType;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class GameManager {
+
+    private final RecordManager recordManager;
     List<ModelUpdateListener> modelUpdateListeners = new ArrayList<>();
     List<TimerListener> timerListeners = new ArrayList<>();
     List<RecordsUpdateListener> recordsUpdateListeners = new ArrayList<>();
-
     private Complexity nextGameComplexity;
     private GameSession currentGameSession;
-    private RecordManager recordManager;
 
-    public GameManager() {
-        recordManager = new RecordManager("records.txt");
+    public GameManager(RecordManager recordManager) {
+        this.recordManager = recordManager;
     }
 
     public void startNewGame() {
@@ -29,12 +30,14 @@ public class GameManager {
         notifyRecordsUpdateListeners();
     }
 
-    public void mouseClick(MouseButton button, int x, int y) {
-        if (isGameSessionFinished(currentGameSession)) return;
-        switch (button) {
-            case LEFT -> currentGameSession.leftMouseClicked(x, y);
-            case MIDDLE -> currentGameSession.middleMouseClicked(x, y);
-            case RIGHT -> currentGameSession.rightMouseClicked(x, y);
+    public void mouseClick(ButtonType buttonType, int x, int y) {
+        if (isGameSessionFinished(currentGameSession)) {
+            return;
+        }
+        switch (buttonType) {
+            case LEFT_BUTTON -> currentGameSession.leftMouseClicked(x, y);
+            case MIDDLE_BUTTON -> currentGameSession.middleMouseClicked(x, y);
+            case RIGHT_BUTTON -> currentGameSession.rightMouseClicked(x, y);
         }
         notifyModelUpdateListeners(GameData.getDataFromSession(currentGameSession));
     }
